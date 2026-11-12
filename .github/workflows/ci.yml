@@ -1,4 +1,5 @@
-name: CI
+name: CI and Release
+
 on:
   push:
     branches: [main, master]
@@ -32,3 +33,61 @@ jobs:
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo clippy --target ${{ matrix.target }} --all-targets -- -D warnings
       - run: cargo build --release --target ${{ matrix.target }}
+      - name: Package release binary
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches.Groups[1].Value
+          $name = "lms-claude-v$version-${{ matrix.target }}"
+          $binary = if ($IsWindows) { "target/${{ matrix.target }}/release/lms-claude.exe" } else { "target/${{ matrix.target }}/release/lms-claude" }
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          if ($IsWindows) {
+            Copy-Item $binary "dist/$name.exe"
+            Compress-Archive -Path "dist/$name.exe" -DestinationPath "dist/$name.zip"
+            $archive = "dist/$name.zip"
+          } else {
+            Copy-Item $binary "dist/$name"
+            tar -czf "dist/$name.tar.gz" -C dist $name
+            $archive = "dist/$name.tar.gz"
+          }
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $archive -Leaf)" | Set-Content "$archive.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+      - name: Publish versioned release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)"
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists. Bump package versions before pushing another release."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/$TAG:refs/tags/$TAG"
+          else
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+          fi
+          gh release create "$TAG" dist/* --title "lms-claude $TAG" --generate-notes

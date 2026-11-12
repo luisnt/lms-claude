@@ -1,6 +1,6 @@
 {
   "name": "lms-claude",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "updated": "2026-07-22T16:31",
   "description": "Native Rust TUI launcher for Claude Code using an LM Studio local server.",
   "main": "src/main.rs",
