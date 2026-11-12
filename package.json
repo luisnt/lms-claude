@@ -24,7 +24,7 @@
     "phone": [],
     "supportEmail": "luisnt.ca@gmail.com"
   },
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "dev": "cargo run --release",
     "format": "cargo fmt --all",
