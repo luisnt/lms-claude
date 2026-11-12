@@ -1,0 +1,33 @@
+{
+  "name": "lms-claude",
+  "version": "1.0.0",
+  "updated": "2026-07-22T16:31",
+  "description": "Native Rust TUI launcher for Claude Code using an LM Studio local server.",
+  "main": "src/main.rs",
+  "author": {
+    "name": "Luis Caldas",
+    "mobile": "+55 (98) 9 8111 2233",
+    "email": "luisnt.usa@gmail.com",
+    "url": "https://github.com/luisnt",
+    "role": "Senior Software Developer Engineer"
+  },
+  "contributors": [],
+  "company": {
+    "name": "Qbits Solutions",
+    "url": "https://www.qbits.pl",
+    "ceo": {
+      "name": "Luis Caldas",
+      "mobile": "+55 (98) 9 8111 2233",
+      "email": "luisnt.eu@gmail.com"
+    },
+    "address": "Rua Projetada, 4, Qd 2, Conjunto Cohajoli - São Luís, MA - Brasil",
+    "phone": [],
+    "supportEmail": "luisnt.ca@gmail.com"
+  },
+  "license": "ISC",
+  "scripts": {
+    "dev": "cargo run --release",
+    "build": "cargo build --release",
+    "start": "target/release/lms-claude.exe"
+  }
+}
